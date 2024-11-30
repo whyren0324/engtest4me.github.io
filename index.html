@@ -24,11 +24,18 @@
         .highlight {
             color: red;
         }
+        #header {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 10px;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <h1>Word Cards</h1>
     <button id="loadButton">800 words</button>
+    <div id="header"></div>
     <table id="wordTable">
         <thead>
             <tr>
@@ -49,6 +56,10 @@
             const tableBody = document.querySelector('#wordTable tbody');
             tableBody.innerHTML = ''; // Clear previous content
 
+            // 更新頁面最上方標題
+            const header = document.getElementById('header');
+            header.textContent = "800 Words Test";
+
             try {
                 // Fetch the CSV file
                 const response = await fetch('800.csv');
@@ -61,9 +72,9 @@
                 const rows = data.split('\n').filter(row => row.trim() !== '');
                 const wordData = rows.map(row => row.split(',')).filter(cols => cols.length === 6);
 
-                // Randomly select 100 rows
+                // Randomly select 20 rows
                 const selectedWords = [];
-                while (selectedWords.length < 100 && wordData.length > 0) {
+                while (selectedWords.length < 20 && wordData.length > 0) {
                     const randomIndex = Math.floor(Math.random() * wordData.length);
                     selectedWords.push(wordData.splice(randomIndex, 1)[0]);
                 }
