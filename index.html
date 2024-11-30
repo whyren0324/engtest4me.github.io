@@ -28,7 +28,7 @@
 </head>
 <body>
     <h1>Word Cards</h1>
-    <button id="loadButton">Load Words</button>
+    <button id="loadButton">800 words</button>
     <table id="wordTable">
         <thead>
             <tr>
@@ -51,7 +51,7 @@
 
             try {
                 // Fetch the CSV file
-                const response = await fetch('words.csv');
+                const response = await fetch('800.csv');
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
@@ -92,8 +92,8 @@
                     tableBody.appendChild(tr);
                 });
             } catch (error) {
-                console.error('Failed to load words.csv:', error);
-                alert('Unable to load words.csv. Check console for details.');
+                console.error('Failed to load 800.csv:', error);
+                alert('Unable to load 800.csv. Check console for details.');
             }
         });
     </script>
