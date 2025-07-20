@@ -7,16 +7,52 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 20px; /* 增加一些外邊距讓內容不會太貼邊 */
         }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex; /* 讓輸入框和按鈕排在同一行 */
+            align-items: center; /* 垂直置中對齊 */
+            gap: 10px; /* 元素間距 */
+        }
+        .controls label {
+            font-weight: bold;
+        }
+        .controls input[type="number"] {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 70px; /* 適當寬度 */
+        }
+        .controls button {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
+            table-layout: fixed; /* 讓表格佈局更穩定，避免內容過長撐開列寬 */
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 5px; /* 減小內邊距，從 8px 縮小到 5px */
             text-align: left;
+            font-size: 0.9em; /* 略微縮小字體大小 */
+            word-wrap: break-word; /* 防止長單字或句子溢出 */
         }
         th {
             background-color: #f4f4f4;
@@ -30,12 +66,27 @@
             margin-top: 10px;
             color: #333;
         }
+
+        /* 調整列寬，可依據內容類型微調 */
+        #wordTable th:nth-child(1), #wordTable td:nth-child(1) { width: 15%; } /* English */
+        #wordTable th:nth-child(2), #wordTable td:nth-child(2) { width: 10%; } /* K.K. Phonetics */
+        #wordTable th:nth-child(3), #wordTable td:nth-child(3) { width: 8%; }  /* Part of Speech */
+        #wordTable th:nth-child(4), #wordTable td:nth-child(4) { width: 15%; } /* Chinese Meaning */
+        #wordTable th:nth-child(5), #wordTable td:nth-child(5) { width: 27%; } /* Example Sentence */
+        #wordTable th:nth-child(6), #wordTable td:nth-child(6) { width: 25%; } /* Example Translation */
     </style>
 </head>
 <body>
     <h1>Word Cards</h1>
-    <button id="loadButton">800 words</button>
+
+    <div class="controls">
+        <label for="wordCount">顯示單字數量:</label>
+        <input type="number" id="wordCount" value="10" min="1" max="800">
+        <button id="loadButton">載入單字</button>
+    </div>
+    
     <div id="header"></div>
+    
     <table id="wordTable">
         <thead>
             <tr>
@@ -54,11 +105,20 @@
     <script>
         document.getElementById('loadButton').addEventListener('click', async () => {
             const tableBody = document.querySelector('#wordTable tbody');
-            tableBody.innerHTML = ''; // Clear previous content
+            tableBody.innerHTML = ''; // 清除舊的內容
 
-            // 更新頁面最上方標題
             const header = document.getElementById('header');
-            header.textContent = "800 Words Test";
+            header.textContent = "載入中..."; // 載入時的提示
+
+            // 獲取使用者輸入的數量
+            const wordCountInput = document.getElementById('wordCount');
+            let desiredWordCount = parseInt(wordCountInput.value, 10);
+
+            // 驗證輸入，確保是有效數字且不小於1
+            if (isNaN(desiredWordCount) || desiredWordCount < 1) {
+                desiredWordCount = 10; // 預設值
+                wordCountInput.value = 10; // 更新輸入框顯示的預設值
+            }
 
             try {
                 // Fetch the CSV file
@@ -70,11 +130,15 @@
                 
                 // Parse the CSV data
                 const rows = data.split('\n').filter(row => row.trim() !== '');
-                const wordData = rows.map(row => row.split(',')).filter(cols => cols.length === 6);
+                // 確保每行有 6 個欄位，並且篩選掉標題行或空行
+                const wordData = rows.map(row => row.split(',')).filter(cols => cols.length === 6 && cols[0].trim() !== 'English');
+                
+                // 實際要顯示的數量取決於使用者設定和文件中的總單字數
+                const actualCountToDisplay = Math.min(desiredWordCount, wordData.length);
 
-                // Randomly select 20 rows
+                // Randomly select words
                 const selectedWords = [];
-                while (selectedWords.length < 20 && wordData.length > 0) {
+                while (selectedWords.length < actualCountToDisplay && wordData.length > 0) {
                     const randomIndex = Math.floor(Math.random() * wordData.length);
                     selectedWords.push(wordData.splice(randomIndex, 1)[0]);
                 }
@@ -90,8 +154,10 @@
                         } else if (index === 4) {
                             // Highlight matching word in the example sentence
                             const englishWord = cols[0].trim();
+                            // 使用更安全的正則表達式，處理特殊字元
+                            const escapedEnglishWord = englishWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                             const highlightedSentence = col.replace(
-                                new RegExp(`\\b${englishWord}\\b`, 'gi'),
+                                new RegExp(`\\b${escapedEnglishWord}\\b`, 'gi'),
                                 `<span class="highlight">${englishWord}</span>`
                             );
                             td.innerHTML = highlightedSentence;
@@ -102,9 +168,14 @@
                     });
                     tableBody.appendChild(tr);
                 });
+
+                // 更新頁面最上方標題
+                header.textContent = `隨機顯示 ${actualCountToDisplay} 個單字`;
+
             } catch (error) {
                 console.error('Failed to load 800.csv:', error);
-                alert('Unable to load 800.csv. Check console for details.');
+                alert('無法載入 800.csv。請檢查控制台以獲取詳細資訊。');
+                header.textContent = "載入失敗";
             }
         });
     </script>
